@@ -1,28 +1,46 @@
 <?php
-// Check if the form was submitted
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Get the form data
-    $name = $_POST['name'];
-    $phone = $_POST['phone'];
-    $destination = $_POST['destination'];
+// Database configuration
+$servername = "localhost";
+$username = "your_db_username";
+$password = "your_db_password";
+$dbname = "jaguar_bus_coaches";
+
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Process form data
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Sanitize inputs
+    $name = htmlspecialchars($_POST['name']);
+    $phone = htmlspecialchars($_POST['phone']);
+    $destination = htmlspecialchars($_POST['destination']);
     $departure_time = $_POST['departure_time'];
 
-    // Basic validation
+    // Validate inputs
     if (empty($name) || empty($phone) || empty($destination) || empty($departure_time)) {
-        echo "All fields are required!";
-    } else {
-        // Here you can connect to a database to store the information
-        // For simplicity, let's just display the booking details
-        echo "<h2>Booking Confirmed</h2>";
-        echo "<p>Thank you, $name, for booking your ticket!</p>";
-        echo "<p>Destination: $destination</p>";
-        echo "<p>Phone: $phone</p>";
-        echo "<p>Departure Time: $departure_time</p>";
-
-        // Optionally, you can redirect to another success page
-        // header('Location: booking_success.php'); // Uncomment to redirect
+        die("All fields are required!");
     }
-} else {
-    echo "Invalid request!";
+
+    // Prepare and bind
+    $stmt = $conn->prepare("INSERT INTO bookings (passenger_name, phone_number, destination, departure_time) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("ssss", $name, $phone, $destination, $departure_time);
+
+    // Execute query
+    if ($stmt->execute()) {
+        // Redirect to success page
+        header("Location: booking_success.html");
+        exit();
+    } else {
+        echo "Error: " . $stmt->error;
+    }
+
+    $stmt->close();
 }
+
+$conn->close();
 ?>
